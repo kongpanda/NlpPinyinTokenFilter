@@ -14,7 +14,8 @@ public class NlpPinyinTokenFilterFactory extends BaseTokenFilterFactory {
 	private boolean _mixpinyin = false;   // default is not mixed(false)
 	private boolean _firstchar = false;   // A switch flag for shot/full PINYI	
 	private boolean _isoutchinese = true; // A switch flag for Chinese term output
-
+    private boolean _combination = true; //首字母组合    First letter combinations,only works under _firstchar =true    
+	
 	@Override
 	public void init(Map<String, String> args) {
 		super.init(args);
@@ -27,11 +28,13 @@ public class NlpPinyinTokenFilterFactory extends BaseTokenFilterFactory {
 		_mixpinyin = getBoolean(args, "mixPinyin", false);
 		_firstchar = getBoolean(args, "firstChar", false);
 		_isoutchinese = getBoolean(args, "outChinese", true);
+		if (_firstchar)
+			_combination = getBoolean(args, "firstCombination", true);
 	}
 
 	public TokenStream create(TokenStream input) {
 		return new NlpPinyinTokenFilter(input, this._mintermlen,
-				this._mixpinyin, this._firstchar, this._isoutchinese);
+				this._mixpinyin, this._firstchar, this._isoutchinese,this._combination);
 	}
 
 	private final int getInt(Map<String, String> args, String name,

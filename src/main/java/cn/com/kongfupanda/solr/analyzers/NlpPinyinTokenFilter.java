@@ -24,7 +24,8 @@ public final class NlpPinyinTokenFilter extends TokenFilter {
 	private boolean _mixpinyin = false;
 	private boolean _firstchar = false;
 	private boolean _isoutchinese = true;
-
+	private boolean _combination = false;
+	
 	private char[] curTermBuffer;
 	private int curTermLength;
 	private final CharTermAttribute termAtt = (CharTermAttribute) addAttribute(CharTermAttribute.class);
@@ -40,30 +41,36 @@ public final class NlpPinyinTokenFilter extends TokenFilter {
 	}
 
 	protected NlpPinyinTokenFilter(TokenStream input, int mintermlen) {
-		this(input, 2, false);
+		this(input, mintermlen, false);
 	}
 
 	protected NlpPinyinTokenFilter(TokenStream input, int mintermlen,
 			boolean mixpinyin) {
-		this(input, 2, false, false);
+		this(input, mintermlen, mixpinyin, false);
 	}
 
 	protected NlpPinyinTokenFilter(TokenStream input, int mintermlen,
 			boolean mixpinyin, boolean firstchar) {
-		this(input, 2, false, false, true);
+		this(input, mintermlen, mixpinyin, firstchar, true);
 	}
 
 	protected NlpPinyinTokenFilter(TokenStream input, int mintermlen,
 			boolean mixpinyin, boolean firstchar, boolean outchinese) {
+		this(input, mintermlen, mixpinyin, firstchar, outchinese, false);
+	}
+	
+	protected NlpPinyinTokenFilter(TokenStream input, int mintermlen,
+			boolean mixpinyin, boolean firstchar, boolean outchinese, boolean combination) {
 		super(input);
 		_mintermlen = mintermlen;
 		_mixpinyin = mixpinyin;
 		_firstchar = firstchar;
 		_isoutchinese = outchinese;
+		_combination = combination;
 		addAttribute(OffsetAttribute.class); // 偏移量属性
 	}
 
-	private int ChineseCharCount(String s) {
+	private static int ChineseCharCount(String s) {
 		int count = 0;
 		int stringlen = s.length();
 		if ((null == s) || ("".equals(s.trim())))
@@ -84,7 +91,7 @@ public final class NlpPinyinTokenFilter extends TokenFilter {
 	 * http://stackoverflow.com/questions/599161/best-way-to-convert-an-
 	 * arraylist-to-a-string
 	 */
-	private Collection<String> BuildFullPinyinString(List<String> pinyinlist,
+	private static Collection<String> BuildFullPinyinString(List<String> pinyinlist,
 			String chinese) {
 		String pinyinbuilder = "";
 		Set<String> pinyins = null;
@@ -92,7 +99,7 @@ public final class NlpPinyinTokenFilter extends TokenFilter {
 		for (String array : pinyinlist) {
 			if (array != null) {
 				pinyinbuilder += array;
-			} else if (this._mixpinyin) {
+			} else {
 				pinyinbuilder += chinese.charAt(i);
 			}
 			i++;
@@ -108,7 +115,7 @@ public final class NlpPinyinTokenFilter extends TokenFilter {
 	 * For short pinyin, whatever the value _mixpinyin is, in this function
 	 * _mixpinyin will be treated as default value(false)
 	 */
-	private Collection<String> BuildShortPinyinString(List<String> pinyinlist,
+	private static Collection<String> BuildShortPinyinString(List<String> pinyinlist,
 			String chinese) {
 		Set<String> pinyins = null;
 		String allfirstchar = "";
@@ -131,11 +138,25 @@ public final class NlpPinyinTokenFilter extends TokenFilter {
 		List<String> pinyinlist;
 		if (this._firstchar) {
 			pinyinlist = Pinyin.firstChar(chinese);
-			return BuildShortPinyinString(pinyinlist, chinese);
+			if (this._combination) {
+				return PinyinCombineSkipNull(pinyinlist);
+			}
+			else
+				return BuildShortPinyinString(pinyinlist, chinese);
 		} else {
 			pinyinlist = Pinyin.pinyin(chinese);
-			return BuildFullPinyinString(pinyinlist, chinese);
+			if (!this._mixpinyin)
+				return PinyinCombineSkipNull(pinyinlist);
+			else
+				return BuildFullPinyinString(pinyinlist, chinese);
 		}
+	}
+
+	public Collection<String> PinyinCombineSkipNull(List<String> pinyinlist) {
+		String combinationPinyin = Pinyin.list2StringSkipNull(pinyinlist,"");
+		Set<String> pinyins = new HashSet<String>();
+		pinyins.add(combinationPinyin);
+		return pinyins;
 	}
 
 	@Override
