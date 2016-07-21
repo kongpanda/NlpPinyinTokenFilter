@@ -7,34 +7,31 @@ import org.apache.solr.analysis.BaseTokenFilterFactory;
 
 /*
  * Author: Jason Song
- * Email: Jasonsong74@126.com
+ *  Email: Jasonsong74@126.com
  */
-
 public class NlpPinyinTokenFilterFactory extends BaseTokenFilterFactory {
-	private int _mintermlen = 2; //
-	private boolean _mixpinyin = false; // Chinese words and other chars mixed
-										// into one term, default is not
-										// mixed(false)
-	private boolean _firstchar = false; // A switch flag for shot/full PINYI
-    private boolean _isoutchinese =true; //A switch flag for Chinese term output 
-	 
+	private int _mintermlen = 2;  
+	private boolean _mixpinyin = false;   // default is not mixed(false)
+	private boolean _firstchar = false;   // A switch flag for shot/full PINYI	
+	private boolean _isoutchinese = true; // A switch flag for Chinese term output
+
 	@Override
 	public void init(Map<String, String> args) {
 		super.init(args);
 		assureMatchVersion();
-		
+
 		_mintermlen = getInt(args, "minTermLen", 2);
 		if (this._mintermlen < 1) {
 			this._mintermlen = 1;
 		}
 		_mixpinyin = getBoolean(args, "mixPinyin", false);
 		_firstchar = getBoolean(args, "firstChar", false);
-		_isoutchinese = getBoolean(args,"outChinese", true);
+		_isoutchinese = getBoolean(args, "outChinese", true);
 	}
 
 	public TokenStream create(TokenStream input) {
-		return new NlpPinyinTokenFilter(input, this._mintermlen, this._mixpinyin,
-				this._firstchar,this._isoutchinese);
+		return new NlpPinyinTokenFilter(input, this._mintermlen,
+				this._mixpinyin, this._firstchar, this._isoutchinese);
 	}
 
 	private final int getInt(Map<String, String> args, String name,
@@ -48,5 +45,4 @@ public class NlpPinyinTokenFilterFactory extends BaseTokenFilterFactory {
 		String s = args.remove(name);
 		return s == null ? defaultVal : Boolean.parseBoolean(s);
 	}
-
 }

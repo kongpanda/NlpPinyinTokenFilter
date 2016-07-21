@@ -17,7 +17,7 @@ import org.nlpcn.commons.lang.pinyin.Pinyin;
 
 /*
  * Author: Jason Song
- * Email: Jasonsong74@126.com
+ *  Email: Jasonsong74@126.com
  */
 public final class NlpPinyinTokenFilter extends TokenFilter {
 	private int _mintermlen = 2;
@@ -35,10 +35,7 @@ public final class NlpPinyinTokenFilter extends TokenFilter {
 	private Collection<String> terms = null;
 	private Iterator<String> termIterator = null;
 
-	private String termpinyinstring = "";
-
 	protected NlpPinyinTokenFilter(TokenStream input) {
-		// TODO Auto-generated constructor stub
 		this(input, 2);
 	}
 
@@ -49,13 +46,11 @@ public final class NlpPinyinTokenFilter extends TokenFilter {
 	protected NlpPinyinTokenFilter(TokenStream input, int mintermlen,
 			boolean mixpinyin) {
 		this(input, 2, false, false);
-
 	}
 
 	protected NlpPinyinTokenFilter(TokenStream input, int mintermlen,
 			boolean mixpinyin, boolean firstchar) {
 		this(input, 2, false, false, true);
-
 	}
 
 	protected NlpPinyinTokenFilter(TokenStream input, int mintermlen,
@@ -79,13 +74,16 @@ public final class NlpPinyinTokenFilter extends TokenFilter {
 				count++;
 		}
 		return count;
-
 	}
-	
+
 	public void reset() throws IOException {
 		super.reset();
 	}
 
+	/**
+	 * http://stackoverflow.com/questions/599161/best-way-to-convert-an-
+	 * arraylist-to-a-string
+	 */
 	private Collection<String> BuildFullPinyinString(List<String> pinyinlist,
 			String chinese) {
 		String pinyinbuilder = "";
@@ -107,14 +105,13 @@ public final class NlpPinyinTokenFilter extends TokenFilter {
 	}
 
 	/*
-	 * For short pinyin, whatever the value  _mixpinyin is, in this function 
+	 * For short pinyin, whatever the value _mixpinyin is, in this function
 	 * _mixpinyin will be treated as default value(false)
-	 **/
+	 */
 	private Collection<String> BuildShortPinyinString(List<String> pinyinlist,
 			String chinese) {
-
 		Set<String> pinyins = null;
-		String allfirstchar = ""; 
+		String allfirstchar = "";
 		for (String array : pinyinlist) {
 			if (pinyins == null || pinyins.isEmpty()) {
 				pinyins = new HashSet<String>();
@@ -125,25 +122,20 @@ public final class NlpPinyinTokenFilter extends TokenFilter {
 				allfirstchar += array;
 			}
 		}
-		if(pinyins!=null)
+		if (pinyins != null)
 			pinyins.add(allfirstchar);
-		
 		return pinyins;
 	}
 
-	/**
-	 * http://stackoverflow.com/questions/599161/best-way-to-convert-an-
-	 * arraylist-to-a-string
-	 */
-
-	private Collection<String> GetPyShort(String chinese) {
-		List<String> pinyinlist = Pinyin.firstChar(chinese);
-		return BuildShortPinyinString(pinyinlist, chinese);
-	}
-
 	private Collection<String> GetPyString(String chinese) {
-		List<String> pinyinlist = Pinyin.pinyin(chinese);
-		return BuildFullPinyinString(pinyinlist, chinese);
+		List<String> pinyinlist;
+		if (this._firstchar) {
+			pinyinlist = Pinyin.firstChar(chinese);
+			return BuildShortPinyinString(pinyinlist, chinese);
+		} else {
+			pinyinlist = Pinyin.pinyin(chinese);
+			return BuildFullPinyinString(pinyinlist, chinese);
+		}
 	}
 
 	@Override
@@ -156,7 +148,6 @@ public final class NlpPinyinTokenFilter extends TokenFilter {
 				this.curTermBuffer = ((char[]) this.termAtt.buffer().clone());
 				this.curTermLength = this.termAtt.length();
 			}
-
 			if ((this._isoutchinese) && (!this.hasCurOut)) {
 				this.hasCurOut = true;
 				this.termAtt.copyBuffer(this.curTermBuffer, 0,
@@ -165,19 +156,12 @@ public final class NlpPinyinTokenFilter extends TokenFilter {
 						.getPositionIncrement());
 				return true;
 			}
-
 			String chinese = this.termAtt.toString();
 			if (ChineseCharCount(chinese) >= this._mintermlen) {
-				try {
-					this.terms = this._firstchar ? GetPyShort(chinese)
-							: GetPyString(chinese);
-					if (this.terms != null)
-						this.termIterator = this.terms.iterator();
-				} catch (Exception ex) {
-					ex.printStackTrace();
-				}
-
-			}
+				this.terms = GetPyString(chinese);
+				if (this.terms != null)
+					this.termIterator = this.terms.iterator();
+			}			
 			if (this.termIterator != null) {
 				while (this.termIterator.hasNext()) {
 					String pinyin = this.termIterator.next();
@@ -186,14 +170,12 @@ public final class NlpPinyinTokenFilter extends TokenFilter {
 					this.posIncrAtt.setPositionIncrement(0);
 					this.typeAtt.setType(this._firstchar ? "short_pinyin"
 							: "pinyin");
-					this.termpinyinstring = "";
 					return true;
 				}
-			}
+			}			
 			this.curTermBuffer = null;
 			this.termIterator = null;
 			this.hasCurOut = false; // 下次取词元后输出原词元（如果开关也准许）
 		}
 	}
-
 }
